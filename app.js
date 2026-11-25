@@ -529,7 +529,7 @@ function applyStore(){document.title=`${store.name} — mix đồ xinh`;document
 function getTotal(){return cart.reduce((sum,item)=>sum+Number(item.price)*item.qty,0)}
 function saveCart(){persistCart();renderCart()}
 function addProduct(id){const p=product(id);if(!p)return;const line=cart.find(x=>x.key===`p${id}`);if(line)line.qty=Math.min(20,line.qty+1);else cart.push({key:`p${id}`,type:'product',id:p.id,name:p.name,price:p.price,emoji:p.emoji,bg:p.bg,qty:1});saveCart();toast(`Đã thêm ${p.name} vào giỏ ♡`)}
-function renderProducts(){const q=$('search').value.trim().toLocaleLowerCase('vi');const list=products.filter(p=>p.active!==false&&(activeCat==='Tất cả'||p.cat===activeCat)&&(p.name.toLocaleLowerCase('vi').includes(q)||p.cat.toLocaleLowerCase('vi').includes(q)));$('productGrid').innerHTML=list.map(p=>`<article class="product-card">${productVisual(p)}<div class="product-info"><h3>${escapeHTML(p.name)}</h3><div class="product-meta"><span class="price">${money(p.price)}</span><button class="add-btn" aria-label="Thêm ${escapeHTML(p.name)}" data-add-product="${p.id}">+</button></div></div></article>`).join('')||'<p>Chưa tìm thấy món phù hợp.</p>'}
+function renderProducts(){const q=$('search').value.trim().toLocaleLowerCase('vi');const list=products.filter(p=>p.active!==false&&(activeCat==='Tất cả'||p.cat===activeCat)&&(p.name.toLocaleLowerCase('vi').includes(q)||p.cat.toLocaleLowerCase('vi').includes(q)));$('productGrid').innerHTML=list.map(p=>`<article class="product-card">${productVisual(p)}<div class="product-info"><h3>${escapeHTML(p.name)}</h3><div class="product-meta"><span class="price">${money(p.price)}</span><button class="add-btn" aria-label="Thêm ${escapeHTML(p.name)}" data-add-product="${p.id}">+</button></div></div></article>`).join('')||'<p>Chưa tìm thấy món đồ phù hợp.</p>'}
 function renderFilters(){$('filters').innerHTML=categories.map(c=>`<button class="filter ${activeCat===c?'active':''}" data-category="${escapeHTML(c)}">${escapeHTML(c)}</button>`).join('')}
 function renderSets(){$('setGrid').innerHTML=sets.length?sets.map(s=>`<article class="set-card"><div class="set-visual" style="background:${escapeHTML(s.bg)}">${escapeHTML(s.emoji)}<small>${escapeHTML(s.tag)}</small></div><div class="set-body"><h3>${escapeHTML(s.name)}</h3><p>${escapeHTML(s.desc)}</p><div class="set-bottom"><span class="price">${money(s.price)}</span><button class="btn primary" data-add-set="${escapeHTML(s.id)}">Chọn set ♡</button></div></div></article>`).join(''):'<p class="empty">Chưa có set mix sẵn nào.</p>'}
 function addSet(id){const s=sets.find(x=>String(x.id)===String(id));if(!s)return;const parts=s.items.map(product).filter(Boolean);cart.push({key:`set-${crypto.randomUUID()}`,type:'set',name:s.name,price:s.price,emoji:s.emoji,bg:s.bg,qty:1,detail:parts.map(p=>p.name).join(', ')});saveCart();toast('Đã thêm set vào giỏ ♡')}
@@ -557,37 +557,37 @@ function renderMix(){
     b.querySelector('span').textContent = t === 'main' ? countOf(mains) : countOf(accs);
   });
   if(mixTab === 'main'){
-    $('mixPicks').innerHTML = mains.length ? mains.map(p => mixRow(p, false)).join('') : '<p class="mix-empty">Chưa có món chính nào.</p>';
+    $('mixPicks').innerHTML = mains.length ? mains.map(p => mixRow(p, false)).join('') : '<p class="mix-empty">Chưa có món đồ chính nào.</p>';
   }else{
-    const hint = hasMain ? '' : '<p class="mix-hint">Chọn ít nhất một món chính trước để thêm phụ kiện.</p>';
+    const hint = hasMain ? '' : '<p class="mix-hint">Chọn ít nhất một món đồ chính trước để thêm phụ kiện.</p>';
     $('mixPicks').innerHTML = hint + (accs.length ? accs.map(p => mixRow(p, !hasMain)).join('') : '<p class="mix-empty">Chưa có phụ kiện nào.</p>');
   }
   const chosen = active.filter(p => mixQty[p.id] > 0);
   const count = chosen.reduce((a,p) => a + mixQty[p.id], 0);
   const total = chosen.reduce((a,p) => a + p.price * mixQty[p.id], 0);
-  $('mixTotal').textContent = `${count} món · ${money(total)}`;
+  $('mixTotal').textContent = `${count} món đồ · ${money(total)}`;
 }
 
 function changeMix(id, delta){
   const p = products.find(x => x.id === id);
   if(!p) return;
   if(isAccessory(p) && delta > 0 && !mixMainIds().length)
-    return toast('Hãy chọn món chính trước, rồi mới thêm phụ kiện nhé ♡');
+    return toast('Hãy chọn món đồ chính trước, rồi mới thêm phụ kiện nhé ♡');
   mixQty[id] = Math.max(0, Math.min(20, (mixQty[id] || 0) + delta));
   if(!mixQty[id]) delete mixQty[id];
-  // Không còn món chính thì phụ kiện đã chọn không còn hợp lệ, bỏ đi
+  // Không còn món đồ chính thì phụ kiện đã chọn không còn hợp lệ, bỏ đi
   if(!isAccessory(p) && !mixMainIds().length){
     const hadAccessory = products.some(x => isAccessory(x) && mixQty[x.id] > 0);
     products.filter(isAccessory).forEach(a => delete mixQty[a.id]);
-    if(hadAccessory) toast('Đã bỏ phụ kiện vì set chưa có món chính.');
+    if(hadAccessory) toast('Đã bỏ phụ kiện vì set chưa có món đồ chính.');
   }
   renderMix();
 }
 
 function addMix(){
-  if(!mixMainIds().length) return toast('Bạn hãy chọn ít nhất một món chính nhé!');
+  if(!mixMainIds().length) return toast('Bạn hãy chọn ít nhất một món đồ chính nhé!');
   const chosen = products.filter(p => mixQty[p.id] > 0);
-  // Món chính đứng trước, phụ kiện đứng sau
+  // Món đồ chính đứng trước, phụ kiện đứng sau
   const ordered = [...chosen.filter(p => !isAccessory(p)), ...chosen.filter(isAccessory)];
   const total = ordered.reduce((a,p) => a + p.price * mixQty[p.id], 0);
   cart.push({key:`mix-${crypto.randomUUID()}`, type:'mix', name:$('mixName').value.trim()||'Set tự mix của bạn', price:total, emoji:'🎀', bg:'#ece3d8', qty:1, detail:ordered.map(p => `${p.name} x${mixQty[p.id]}`).join(', ')});
