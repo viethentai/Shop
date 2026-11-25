@@ -28,3 +28,15 @@
 .color-field input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 .color-field input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
 .color-field input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+
+/* Căn giữa checkbox hiển thị, nút lưu và thông báo trong form */
+.editor-form>.check-label,.editor-form>button[type=submit],.editor-form>.form-error{justify-self:center}
+.editor-form>.form-error{text-align:center}
+
+/* Quản lý set mix sẵn */
+.set-picker{display:grid;gap:7px;font-size:12px;font-weight:900;max-width:420px;margin-top:22px}
+.set-picker select{padding:12px 14px;border:1px solid #eae7e4;border-radius:12px;background:#fff}
+.set-items-box{display:grid;gap:8px}
+.set-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:280px;overflow:auto;padding:12px;border:1px solid #eae7e4;border-radius:14px;background:#fff}
+.set-item{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700;cursor:pointer}
+.set-item input{width:auto;margin:0}
