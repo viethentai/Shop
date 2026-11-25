@@ -160,7 +160,7 @@ $('mixSetForm').addEventListener('submit',async e=>{
   const price=Number(f.elements.price.value);
   const bg=f.elements.bg.value.trim();
   if(!name)return setError('mixSetMessage','Vui lòng nhập tên set.');
-  if(!items.length)return setError('mixSetMessage','Chọn ít nhất một món cho set.');
+  if(!items.length)return setError('mixSetMessage','Chọn ít nhất một món đồ cho set.');
   if(!Number.isSafeInteger(price)||price<0)return setError('mixSetMessage','Giá set không hợp lệ.');
   if(!HEX6.test(bg))return setError('mixSetMessage','Màu nền phải có dạng #rrggbb.');
   const payload={name,tag:f.elements.tag.value.trim(),description:f.elements.description.value.trim(),emoji:f.elements.emoji.value.trim()||'🎀',bg:bg.toLowerCase(),price,items,sort_order:Number(f.elements.sort_order.value)||0,active:f.elements.active.checked,updated_at:new Date().toISOString()};
