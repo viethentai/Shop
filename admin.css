@@ -17,3 +17,14 @@
 .image-upload-field>small{display:block}
 
 .order-filters{margin:4px 0 18px}
+
+/* Mỗi ô trong form sản phẩm giữ chiều cao riêng, không kéo theo ô cạnh bên */
+.form-grid>*{align-self:start;align-content:start}
+
+/* Bảng màu dạng tròn cạnh ô mã màu */
+.color-field{display:flex;align-items:center;gap:10px}
+.color-field input[name=bg]{flex:1;min-width:0}
+.color-field input[type=color]{width:44px;height:44px;flex:none;padding:0;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #d8cdc2;background:none;cursor:pointer;overflow:hidden}
+.color-field input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.color-field input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+.color-field input[type=color]::-moz-color-swatch{border:0;border-radius:50%}

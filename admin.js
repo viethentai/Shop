@@ -36,7 +36,13 @@ document.querySelectorAll('.side-tab[data-section]').forEach(b=>b.onclick=()=>ac
 async function loadProducts(){const {data,error}=await db.from('products').select('*').order('id');if(error){console.error(error);return}products=data||[];$('productSelect').innerHTML=products.map(p=>`<option value="${p.id}">${p.id}. ${escapeHtml(p.name)}${p.active?'':' (ẩn)'}</option>`).join('');if(products.length)fillProductForm(products[0])}
 
 function revokePreviews(){editImages.forEach(e=>{if(e.previewUrl)URL.revokeObjectURL(e.previewUrl)})}
-function fillProductForm(p){const f=$('productForm');revokePreviews();editImages=productImagesOf(p).map(url=>({url}));f.elements.id.value=p.id;f.elements.name.value=p.name;f.elements.category.value=p.category;f.elements.price.value=p.price;f.elements.emoji.value=p.emoji;f.elements.bg.value=p.bg;f.elements.imageFile.value='';f.elements.active.checked=p.active;renderImageList();setError('productMessage','')}
+const HEX6=/^#[0-9a-f]{6}$/i;
+const bgPicker=$('bgPicker');
+const bgInput=document.querySelector('#productForm [name=bg]');
+bgPicker.addEventListener('input',()=>{bgInput.value=bgPicker.value});
+bgInput.addEventListener('input',()=>{if(HEX6.test(bgInput.value.trim()))bgPicker.value=bgInput.value.trim().toLowerCase()});
+
+function fillProductForm(p){const f=$('productForm');revokePreviews();editImages=productImagesOf(p).map(url=>({url}));f.elements.id.value=p.id;f.elements.name.value=p.name;f.elements.category.value=p.category;f.elements.price.value=p.price;f.elements.emoji.value=p.emoji;f.elements.bg.value=p.bg;bgPicker.value=HEX6.test(p.bg||'')?p.bg.toLowerCase():'#ece3d8';f.elements.imageFile.value='';f.elements.active.checked=p.active;renderImageList();setError('productMessage','')}
 $('productSelect').addEventListener('change',()=>{const p=products.find(x=>x.id===Number($('productSelect').value));if(p)fillProductForm(p)});
 
 $('imageFile').addEventListener('change',()=>{
