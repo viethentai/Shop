@@ -1,4 +1,4 @@
-# Kẹo Closet — Storefront + Admin + Supabase
+# KHO BÁU NHỎ — Storefront + Admin + Supabase
 
 Website bán hàng frontend HTML/CSS/JavaScript, sử dụng Supabase Auth + PostgreSQL để lưu đơn hàng, sản phẩm và thông tin shop. Không cần build framework.
 
@@ -35,7 +35,7 @@ where email = 'admin@example.com';
 
 ### Khách hàng
 - Xem, tìm kiếm, lọc sản phẩm; chọn set mix có sẵn; tự mix set; quản lý giỏ hàng.
-- Đặt hàng tạo mã dạng `KEO-YYYYMMDD-XXXXXXXXXXXX` và lưu trực tiếp vào Supabase.
+- Đặt hàng tạo mã dạng `KBN-YYYYMMDD-XXXXXXXXXXXX` và lưu trực tiếp vào Supabase.
 - Sau khi đặt thành công, khách thấy mã đơn, có thể sao chép và mở Zalo shop để gửi mã yêu cầu xác nhận.
 - Tra cứu đơn bằng mã. Trang tra cứu công khai chỉ trả mã đơn, trạng thái, sản phẩm, tổng tiền và thời gian; không trả tên, số điện thoại, địa chỉ hoặc ghi chú khách hàng.
 

@@ -21,7 +21,7 @@ async function verifySession(){if(!db){setError('loginError','Chưa cấu hình 
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!db)return setError('loginError','Chưa cấu hình Supabase.');const f=e.currentTarget;const email=f.elements.email.value.trim();const password=f.elements.password.value;const btn=f.querySelector('button');btn.disabled=true;setError('loginError','');try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;if(!isAdmin(data.user)){await db.auth.signOut();throw new Error('Tài khoản chưa được cấp quyền Admin.')}f.reset();showDashboard(data.user)}catch(err){setError('loginError',err.message||'Đăng nhập thất bại.')}finally{btn.disabled=false}});
 $('logoutButton').onclick=async()=>{await db.auth.signOut();location.reload()};
 
-async function loadAll(){await Promise.all([loadOrders(),loadProducts(),loadSettings()])}
+async function loadAll(){await Promise.all([loadOrders(),loadProducts(),loadSettings()]);await loadMixSets()}
 async function loadOrders(){const {data,error}=await db.from('orders').select('*').order('created_at',{ascending:false}).limit(500);if(error){console.error(error);toast('Không tải được danh sách đơn hàng. Kiểm tra quyền Admin.');return}orders=data||[];renderOrders();renderStats()}
 function renderStats(){$('statPending').textContent=orders.filter(o=>o.status==='pending').length;$('statProcessing').textContent=orders.filter(o=>['confirmed','preparing','shipping'].includes(o.status)).length;$('statCompleted').textContent=orders.filter(o=>o.status==='completed').length;$('statAll').textContent=orders.length}
 function renderOrders(){document.querySelectorAll('#statusChips [data-status]').forEach(b=>b.classList.toggle('active',b.dataset.status===statusFilter));const list=orders.filter(o=>statusFilter==='all'||o.status===statusFilter);$('orderList').innerHTML=list.length?list.map(o=>`<button class="order-list-item ${selectedOrder?.id===o.id?'active':''}" data-order-id="${o.id}"><b>${o.order_code}</b><span>${escapeHtml(o.customer_name)} · ${new Date(o.created_at).toLocaleString('vi-VN')}</span><span>${labels[o.status]||o.status}</span><strong>${money(o.total)}</strong></button>`).join(''):'<p class="muted">Chưa có đơn hàng phù hợp.</p>'}
@@ -29,7 +29,7 @@ function renderOrderDetail(order){selectedOrder=order;renderOrders();const items
 $('orderList').addEventListener('click',e=>{const b=e.target.closest('[data-order-id]');if(!b)return;const order=orders.find(o=>o.id===b.dataset.orderId);if(order)renderOrderDetail(order)});
 async function updateOrderStatus(id){const status=$('newOrderStatus').value;const {data,error}=await db.from('orders').update({status}).eq('id',id).select().single();if(error){setError('orderMessage','Không thể cập nhật trạng thái.');console.error(error);return}orders=orders.map(o=>o.id===id?data:o);renderOrderDetail(data);renderStats();toast('Đã cập nhật trạng thái đơn hàng.')}
 $('refreshOrders').onclick=loadOrders;$('statusChips').addEventListener('click',e=>{const b=e.target.closest('[data-status]');if(!b)return;statusFilter=b.dataset.status;renderOrders()});
-$('adminLookupButton').onclick=async()=>{const code=$('adminOrderCode').value.trim().toUpperCase();if(!/^KEO-\d{8}-[A-F0-9]{12}$/.test(code)){toast('Mã đơn hàng chưa đúng định dạng.');return}const {data,error}=await db.from('orders').select('*').eq('order_code',code).maybeSingle();if(error){toast('Không thể tra cứu mã đơn.');return}if(!data){toast('Không tìm thấy đơn hàng.');return}if(!orders.some(o=>o.id===data.id))orders.unshift(data);renderOrderDetail(data);activateSection('orders');renderStats()};
+$('adminLookupButton').onclick=async()=>{const code=$('adminOrderCode').value.trim().toUpperCase();if(!/^(KBN|KEO)-\d{8}-[A-Z0-9]{12}$/.test(code)){toast('Mã đơn hàng chưa đúng định dạng.');return}const {data,error}=await db.from('orders').select('*').eq('order_code',code).maybeSingle();if(error){toast('Không thể tra cứu mã đơn.');return}if(!data){toast('Không tìm thấy đơn hàng.');return}if(!orders.some(o=>o.id===data.id))orders.unshift(data);renderOrderDetail(data);activateSection('orders');renderStats()};
 function activateSection(name){document.querySelectorAll('.side-tab[data-section]').forEach(b=>b.classList.toggle('active',b.dataset.section===name));document.querySelectorAll('.admin-section').forEach(s=>s.classList.toggle('hidden',s.id!==`section-${name}`))}
 document.querySelectorAll('.side-tab[data-section]').forEach(b=>b.onclick=()=>activateSection(b.dataset.section));
 
@@ -114,6 +114,81 @@ $('productForm').addEventListener('submit',async e=>{
   }finally{btn.disabled=false}
 });
 
-async function loadSettings(){const {data,error}=await db.from('store_settings').select('*').eq('id',true).maybeSingle();if(error||!data)return;const f=$('settingsForm');f.elements.store_name.value=data.store_name;f.elements.zalo_phone.value=data.zalo_phone}
+async function loadSettings(){const {data,error}=await db.from('store_settings').select('*').eq('id',true).maybeSingle();if(error||!data)return;const f=$('settingsForm');f.elements.store_name.value=data.store_name;f.elements.zalo_phone.value=data.zalo_phone;document.querySelectorAll('.brand-name').forEach(el=>el.textContent=data.store_name);document.title=`Quản trị — ${data.store_name}`}
 $('settingsForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget;const payload={store_name:f.elements.store_name.value.trim(),zalo_phone:f.elements.zalo_phone.value.trim(),updated_at:new Date().toISOString()};const {error}=await db.from('store_settings').upsert({id:true,...payload});if(error){setError('settingsMessage','Không thể lưu thông tin shop.');console.error(error);return}setError('settingsMessage','Đã lưu thông tin cửa hàng.');toast('Đã cập nhật thông tin shop.')});
+
+/* ---- Set mix sẵn ---- */
+let mixSets=[];
+function renderMixSetSelect(){$('mixSetSelect').innerHTML=mixSets.length?mixSets.map(s=>`<option value="${s.id}">${s.id}. ${escapeHtml(s.name)}${s.active?'':' (ẩn)'}</option>`).join(''):'<option value="">Chưa có set nào</option>'}
+function renderMixSetItems(selected){$('mixSetItems').innerHTML=products.map(p=>`<label class="set-item"><input type="checkbox" value="${p.id}" ${selected.includes(Number(p.id))?'checked':''}><span>${escapeHtml(p.name)} · ${money(p.price)}</span></label>`).join('')}
+function fillMixSetForm(s){
+  const f=$('mixSetForm');
+  f.elements.id.value=s?.id??'';
+  f.elements.name.value=s?.name??'';
+  f.elements.tag.value=s?.tag??'';
+  f.elements.description.value=s?.description??'';
+  f.elements.emoji.value=s?.emoji??'🎀';
+  f.elements.price.value=s?.price??'';
+  f.elements.sort_order.value=s?.sort_order??0;
+  const bg=HEX6.test(s?.bg||'')?s.bg.toLowerCase():'#edeae7';
+  f.elements.bg.value=bg;
+  $('mixSetBgPicker').value=bg;
+  f.elements.active.checked=s?s.active!==false:true;
+  renderMixSetItems(s?.items||[]);
+  $('mixSetSelect').value=s?String(s.id):'';
+  $('deleteMixSet').disabled=!s;
+  setError('mixSetMessage','');
+}
+async function loadMixSets(){
+  const {data,error}=await db.from('mix_sets').select('*').order('sort_order').order('id');
+  if(error){console.error(error);setError('mixSetMessage','Không tải được danh sách set. Hãy chắc chắn đã chạy lại database.sql.');return}
+  mixSets=data||[];
+  const current=$('mixSetForm').elements.id.value;
+  renderMixSetSelect();
+  fillMixSetForm(mixSets.find(x=>String(x.id)===current)||mixSets[0]||null);
+}
+$('mixSetSelect').addEventListener('change',()=>fillMixSetForm(mixSets.find(x=>String(x.id)===$('mixSetSelect').value)||null));
+$('newMixSet').onclick=()=>fillMixSetForm(null);
+$('mixSetBgPicker').addEventListener('input',e=>{$('mixSetForm').elements.bg.value=e.target.value});
+$('mixSetForm').elements.bg.addEventListener('input',e=>{if(HEX6.test(e.target.value.trim()))$('mixSetBgPicker').value=e.target.value.trim().toLowerCase()});
+$('mixSetForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.currentTarget;
+  const id=f.elements.id.value?Number(f.elements.id.value):null;
+  const name=f.elements.name.value.trim();
+  const items=[...$('mixSetItems').querySelectorAll('input:checked')].map(i=>Number(i.value));
+  const price=Number(f.elements.price.value);
+  const bg=f.elements.bg.value.trim();
+  if(!name)return setError('mixSetMessage','Vui lòng nhập tên set.');
+  if(!items.length)return setError('mixSetMessage','Chọn ít nhất một món cho set.');
+  if(!Number.isSafeInteger(price)||price<0)return setError('mixSetMessage','Giá set không hợp lệ.');
+  if(!HEX6.test(bg))return setError('mixSetMessage','Màu nền phải có dạng #rrggbb.');
+  const payload={name,tag:f.elements.tag.value.trim(),description:f.elements.description.value.trim(),emoji:f.elements.emoji.value.trim()||'🎀',bg:bg.toLowerCase(),price,items,sort_order:Number(f.elements.sort_order.value)||0,active:f.elements.active.checked,updated_at:new Date().toISOString()};
+  const btn=f.querySelector('button[type=submit]');
+  btn.disabled=true;
+  setError('mixSetMessage','Đang lưu...');
+  try{
+    const q=id?db.from('mix_sets').update(payload).eq('id',id).select().single():db.from('mix_sets').insert(payload).select().single();
+    const {data,error}=await q;
+    if(error)throw error;
+    await loadMixSets();
+    fillMixSetForm(mixSets.find(x=>x.id===data.id)||null);
+    setError('mixSetMessage','Đã lưu set.');
+    toast('Đã lưu set mix.');
+  }catch(err){
+    console.error(err);
+    setError('mixSetMessage',`Lưu set thất bại: ${err.message||'Lỗi không xác định'}`);
+  }finally{btn.disabled=false}
+});
+$('deleteMixSet').addEventListener('click',async()=>{
+  const id=$('mixSetForm').elements.id.value;
+  if(!id)return;
+  const s=mixSets.find(x=>String(x.id)===id);
+  if(!confirm(`Xóa set "${s?.name||''}"? Thao tác này không thể hoàn tác.`))return;
+  const {error}=await db.from('mix_sets').delete().eq('id',Number(id));
+  if(error){console.error(error);return setError('mixSetMessage','Không xóa được set.')}
+  await loadMixSets();
+  toast('Đã xóa set mix.');
+});
+
 verifySession();
